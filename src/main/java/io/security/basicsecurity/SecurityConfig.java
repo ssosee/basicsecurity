@@ -2,6 +2,7 @@ package io.security.basicsecurity;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -34,11 +35,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
 
     @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.inMemoryAuthentication().withUser("user").password("{noop}123").roles("USER");
+        auth.inMemoryAuthentication().withUser("sys").password("{noop}123").roles("SYS", "USER");
+        auth.inMemoryAuthentication().withUser("admin").password("{noop}123").roles("ADMIN", "SYS", "USER");
+    }
+
+    @Override
     protected void configure(HttpSecurity http) throws Exception {
 
         //basicConfigure(http);
         //formConfigure(http);
-        logout(http);
+        //logout(http);
+        authorizeUrl(http);
 
 //        http
 //                .authorizeRequests() // 요청에 대한 보안 검사
@@ -205,5 +214,33 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .maxSessionsPreventsLogin(true) // 동시로그인 차단, false: 기존 세션 만료
                 //.expiredUrl("/expired") // 세션이 만료된 경우 이동 할 페이지
          ;
+    }
+
+    /**
+     * 권한 설정
+     * URL 방식
+     *
+     * 설정 시 구체적인 경로가 먼저 오고 그것 보다 큰 범위의 경로가 뒤에 오도록 한다.
+     */
+    private void authorizeUrl(HttpSecurity http) throws Exception {
+
+        http
+                .authorizeRequests()
+                .antMatchers("/user").hasRole("USER")
+                .antMatchers("/admin/pay").hasRole("ADMIN")
+                .antMatchers("/admin/**").access("hasRole('ADMIN') or hasRole('SYS')")
+                .anyRequest().authenticated();
+
+        http
+                .formLogin();
+
+//        http
+//                .antMatcher("/shop/**")
+//                .authorizeRequests()
+//                .antMatchers("/shop/login", "/shop/users/**").permitAll()
+//                .antMatchers("/shop/mapage").hasRole("USER")
+//                .antMatchers("/shop/admin/pay").access("hasRole('ADMIN')")
+//                .antMatchers("/shop/admin/**").access("hasRole('ADMIN') or hasRole('SYS')")
+//                .anyRequest().authenticated();
     }
 }
