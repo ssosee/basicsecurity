@@ -5,6 +5,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * 좁은 범위의 보안기능이 우선순위가 더 높아야 한다.
@@ -43,5 +45,10 @@ class MySecurityConfig2 extends WebSecurityConfigurerAdapter {
                 .anyRequest().permitAll()
                 .and()
                 .formLogin();
+
+        /**
+         * 전략 변경
+         */
+        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_GLOBAL);
     }
 }
