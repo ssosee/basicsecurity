@@ -1,12 +1,13 @@
 package io.security.basicsecurity;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class MySecurityController {
 
-    @GetMapping("/home")
+    @GetMapping("/")
     public String index() {
         return "home";
     }
@@ -34,5 +35,15 @@ public class MySecurityController {
     @GetMapping("/admin/**")
     public String admin() {
         return "admin";
+    }
+
+    @GetMapping("/denied")
+    public String denied() {
+        return "denied";
+    }
+
+    @PostMapping("/")
+    public String root() {
+        return "root";
     }
 }

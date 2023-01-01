@@ -1,16 +1,25 @@
 package io.security.basicsecurity;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.savedrequest.SavedRequest;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -25,8 +34,8 @@ import static javax.management.Query.and;
  * <a href="https://velog.io/@pjh612/Deprecated%EB%90%9C-WebSecurityConfigurerAdapter-%EC%96%B4%EB%96%BB%EA%B2%8C-%EB%8C%80%EC%B2%98%ED%95%98%EC%A7%80">
  *     참고</a>
  */
-@Configuration
-@EnableWebSecurity // 웹 보안 활성화
+//@Configuration
+//@EnableWebSecurity // 웹 보안 활성화
 @RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -47,7 +56,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         //basicConfigure(http);
         //formConfigure(http);
         //logout(http);
-        authorizeUrl(http);
+        //rememberMe(http);
+        //authorizeUrl(http);
+        //exception(http);
+        //csrf(http);
 
 //        http
 //                .authorizeRequests() // 요청에 대한 보안 검사
@@ -160,6 +172,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 });
     }
 
+    private void rememberMe(HttpSecurity http) throws Exception {
+
+        http
+                .authorizeRequests()
+                        .anyRequest().authenticated();
+        http
+                .formLogin();
+
+        http
+                .rememberMe()
+                .rememberMeParameter("remember")
+                .tokenValiditySeconds(3600)
+                .alwaysRemember(false)
+                .userDetailsService(userDetailsService);
+    }
+
     /**
      * 세션 정책 설정
      */
@@ -242,5 +270,61 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //                .antMatchers("/shop/admin/pay").access("hasRole('ADMIN')")
 //                .antMatchers("/shop/admin/**").access("hasRole('ADMIN') or hasRole('SYS')")
 //                .anyRequest().authenticated();
+    }
+
+    private void exception(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .antMatchers("/loginPage").permitAll()
+                .antMatchers("/user").hasRole("USER")
+                .antMatchers("/admin/pay").hasRole("ADMIN")
+                .antMatchers("/admin/**").access("hasRole('ADMIN') or hasRole('SYS')")
+                .anyRequest().authenticated();
+
+        http
+                .formLogin()
+                .successHandler(new AuthenticationSuccessHandler() {
+                    @Override
+                    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+                        /**
+                         * 사용자의 이전 요청 정보를 세션에 저장하고, 이를 꺼내오는 캐시 메커  니즘
+                         */
+                        RequestCache requestCache = new HttpSessionRequestCache();
+                        // 사용자가 요청했던 request 파라미터 값들, 그 당시의 헤더값들 등이 저장
+                        SavedRequest savedRequest = requestCache.getRequest(request, response);
+                        // 사용자가 원래 가고싶은 URL로 이동
+                        response.sendRedirect(savedRequest.getRedirectUrl());
+                    }
+                });
+
+        http
+                .exceptionHandling() //인증, 인가 예외 처리
+//                .authenticationEntryPoint(new AuthenticationEntryPoint() { //인증실패 시 처리
+//                    @Override
+//                    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+//                         response.sendRedirect("/loginPage"); //사용자가 만든 로그인 페이지 이동
+//                    }
+//                })
+                .accessDeniedHandler(new AccessDeniedHandler() { //인가실패 시 처리
+                    @Override
+                    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
+                        response.sendRedirect("/denied");
+                    }
+                });
+    }
+
+    /**
+     * Cross Site Request Forgery
+     */
+    private void csrf(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .anyRequest().permitAll();
+
+        http
+                .formLogin();
+
+//        http
+//                .csrf().disable();
     }
 }
