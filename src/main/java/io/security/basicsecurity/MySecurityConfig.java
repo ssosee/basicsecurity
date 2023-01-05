@@ -14,7 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 @Configuration
 @EnableWebSecurity
-@Order(0) // 우선순위
+@Order(1) // 우선순위
 public class MySecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -35,7 +35,7 @@ public class MySecurityConfig extends WebSecurityConfigurerAdapter {
  * 넒은 범위의 보안기능이 우선순위가 더 낮아야 한다.
  */
 @Configuration
-@Order(1) // 우선순위
+@Order(2) // 우선순위
 class MySecurityConfig2 extends WebSecurityConfigurerAdapter {
 
     @Override
