@@ -3,7 +3,6 @@ package io.security.basicsecurity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,10 +34,9 @@ import static javax.management.Query.and;
  * <a href="https://velog.io/@pjh612/Deprecated%EB%90%9C-WebSecurityConfigurerAdapter-%EC%96%B4%EB%96%BB%EA%B2%8C-%EB%8C%80%EC%B2%98%ED%95%98%EC%A7%80">
  *     참고</a>
  */
-@Configuration
-@EnableWebSecurity // 웹 보안 활성화
+//@Configuration
+//@EnableWebSecurity // 웹 보안 활성화
 @RequiredArgsConstructor
-@Order(0)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final LoginSuccessHandler loginSuccessHandler;
@@ -55,12 +53,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        //basicConfigure(http);
+        basicConfigure(http);
         //formConfigure(http);
         //logout(http);
         //rememberMe(http);
-        //concurrentSessionControl(http);
-        sessionFixedProtection(http);
         //authorizeUrl(http);
         //exception(http);
         //csrf(http);
@@ -222,9 +218,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated();
 
         http
-                .formLogin();
-
-        http
                 .sessionManagement()
                 .sessionFixation().changeSessionId();
         // changeSessionId(): 세션 아이디 변경,
@@ -243,13 +236,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated();
 
         http
-                .formLogin();
-
-        http
                 .sessionManagement()
                 //.invalidSessionUrl("/invalid") // 세션이 유효하지 않을 때 이동할 페이지
                 .maximumSessions(1) // 최대 허용 가능 세션 수
-                .maxSessionsPreventsLogin(false) // 동시로그인 차단, false: 기존 세션 만료
+                .maxSessionsPreventsLogin(true) // 동시로그인 차단, false: 기존 세션 만료
                 //.expiredUrl("/expired") // 세션이 만료된 경우 이동 할 페이지
          ;
     }
